@@ -1,0 +1,532 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>html{color-scheme:dark}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Planets</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Manrope:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: phone-width app column, sticky header + search, scrolling feed, fixed 3-tab bar; art first, facts under it */
+:root{
+  color-scheme:dark;
+  --bg:#000; --surface:#0a0c13; --surface2:#11141f; --line:#1d2233;
+  --fg:#f4f6fb; --muted:#8c94a8; --dim:#5b6276;
+  --blue:#3d7bff; --blue-soft:#7fb0ff; --purple:#8b5cf6; --purple-soft:#c4b5fd;
+  --display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --body:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--blue-soft);outline-offset:2px;border-radius:6px}
+sup{font-size:.68em;line-height:0}
+.app{max-width:480px;margin:0 auto;padding-inline:16px;padding-block:0 96px;min-height:100%}
+
+/* header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);margin-inline:-16px;padding:12px 16px 10px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px}
+.brand svg{width:34px;height:34px;flex:none;border-radius:9px;border:1px solid var(--line)}
+.brand h1{font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:.02em;margin:0;flex:1}
+.chip{font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:4px 9px;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.chip i{width:6px;height:6px;border-radius:50%;background:var(--dim)}
+.chip.live{color:var(--blue-soft)} .chip.live i{background:var(--blue)}
+.search{margin-top:10px;display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:0 12px}
+.search svg{width:17px;height:17px;flex:none;color:var(--muted)}
+.search input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--fg);font:inherit;padding:10px 0}
+.search input::placeholder{color:var(--dim)}
+.search:focus-within{border-color:var(--blue)}
+.search button{color:var(--muted);font-size:13px;padding:6px 2px}
+
+h2{font-family:var(--display);font-weight:500;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg);margin:26px 0 12px;text-wrap:balance}
+h2 small{font-family:var(--body);text-transform:none;letter-spacing:0;color:var(--muted);font-size:12px;font-weight:500;margin-left:8px}
+.note{color:var(--muted);font-size:12.5px;margin:8px 0 0}
+
+/* feed */
+.post{padding:16px 0 18px;border-bottom:1px solid var(--line)}
+.post-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.ava{width:36px;height:36px;border-radius:50%;object-fit:cover;flex:none;padding:2px;background:linear-gradient(135deg,var(--blue),var(--purple))}
+.post-head b{display:block;font-weight:700;line-height:1.2}
+.post-head span{display:block;font-size:12px;color:var(--muted)}
+.shot{display:block;width:100%;aspect-ratio:1/1;border-radius:14px;overflow:hidden;background:var(--surface);position:relative}
+.shot img{width:100%;height:100%;object-fit:cover;display:block}
+.acts{display:flex;align-items:center;gap:14px;margin:10px 0 6px}
+.acts button{display:flex;align-items:center;gap:6px;color:var(--fg);font-size:13px;font-weight:600}
+.acts svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
+.acts .on.like svg{fill:var(--purple);stroke:var(--purple)}
+.acts .on.save svg{fill:var(--blue);stroke:var(--blue)}
+.acts .sp{flex:1}
+.cap{margin:0;color:#d6dae6}
+.cap b{color:var(--fg)}
+.more{color:var(--blue-soft);font-weight:600;margin-top:4px;font-size:14px}
+.stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.stats span{font-size:12px;color:var(--purple-soft);background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:3px 8px;font-variant-numeric:tabular-nums}
+.empty{color:var(--muted);padding:40px 0;text-align:center}
+
+/* apod */
+.apod{margin-top:16px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
+.apod img{width:100%;display:block;max-height:260px;object-fit:cover}
+.apod div{padding:10px 12px}
+.apod small{color:var(--blue-soft);font-weight:700;letter-spacing:.06em;font-size:11px;text-transform:uppercase}
+.apod b{display:block}
+
+/* explore */
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.tile{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:block;width:100%}
+.tile img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block}
+.tile div{padding:9px 11px 11px}
+.tile b{display:block;line-height:1.25}
+.tile span{font-size:12px;color:var(--muted)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px}
+.panel svg{display:block;width:100%;height:auto}
+.panel svg text{font-family:var(--body)}
+
+/* detail */
+.back{display:flex;align-items:center;gap:6px;color:var(--blue-soft);font-weight:600;padding:14px 0 12px}
+.back svg{width:18px;height:18px}
+.d-title{font-family:var(--display);font-weight:700;font-size:26px;line-height:1.15;margin:16px 0 2px;text-wrap:balance}
+.d-sub{color:var(--purple-soft);font-size:13px;font-weight:600;letter-spacing:.03em}
+.d-p{color:#d6dae6;margin:12px 0 0;max-width:65ch}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+td{padding:10px 0;border-bottom:1px solid var(--line);vertical-align:top}
+td:first-child{color:var(--muted);width:44%;padding-right:10px}
+td:last-child{font-weight:600;text-align:right}
+tr:last-child td{border-bottom:0}
+.bars{display:grid;gap:8px}
+.bar{display:grid;grid-template-columns:112px minmax(0,1fr) auto;gap:8px;align-items:center;font-size:12.5px}
+.bar span:first-child{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar span:last-child{font-variant-numeric:tabular-nums;color:var(--muted);min-width:64px;text-align:right}
+.bar i{display:block;height:8px;border-radius:4px;background:#2a3147}
+.bar.me span{color:var(--fg);font-weight:700}
+.bar.me i{background:linear-gradient(90deg,var(--blue),var(--purple))}
+.src{font-size:12px;color:var(--dim);margin-top:18px}
+
+/* timeline */
+.filters{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-inline:-16px;padding-inline:16px;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.filters button{flex:none;border:1px solid var(--line);border-radius:99px;padding:6px 12px;font-size:13px;font-weight:600;color:var(--muted)}
+.filters button.on{background:var(--fg);color:#000;border-color:var(--fg)}
+.tl{position:relative;margin-top:8px;padding-left:26px}
+.tl::before{content:"";position:absolute;left:6px;top:6px;bottom:0;width:2px;background:linear-gradient(var(--blue),var(--purple) 60%,var(--line))}
+.decade{font-family:var(--display);font-size:22px;font-weight:700;color:var(--dim);margin:22px 0 6px;letter-spacing:.02em}
+.ev{position:relative;padding:10px 0 14px}
+.ev::before{content:"";position:absolute;left:-26px;top:16px;width:14px;height:14px;border-radius:50%;background:var(--bg);border:2px solid var(--c)}
+.ev time{font-size:12px;font-weight:700;letter-spacing:.05em;color:var(--c);text-transform:uppercase}
+.ev h3{margin:2px 0 4px;font-size:16px;font-weight:700;line-height:1.3}
+.ev p{margin:0;color:#c9cedc;font-size:14px}
+.ev .tag{display:inline-block;margin-top:6px;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:1px 7px}
+.ev figure{margin:10px 0 0;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px}
+.ev figure svg{display:block;width:100%;height:auto}
+.ev figcaption{font-size:12px;color:var(--muted);margin-top:6px}
+
+/* tab bar */
+.tabs{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:min(100%,480px);z-index:30;display:grid;grid-template-columns:repeat(3,1fr);background:rgba(4,5,9,.94);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px))}
+.tabs button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;font-size:11px;font-weight:600;color:var(--dim)}
+.tabs svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tabs button.on{color:var(--fg)}
+.tabs button.on svg{stroke:var(--blue-soft)}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <defs>
+          <radialGradient id="ng" cx="36%" cy="32%" r="75%"><stop offset="0" stop-color="#8fc0ff"/><stop offset=".45" stop-color="#3d6ff0"/><stop offset="1" stop-color="#0b1a5c"/></radialGradient>
+          <clipPath id="nc"><circle cx="32" cy="32" r="19"/></clipPath>
+        </defs>
+        <rect width="64" height="64" fill="#000"/>
+        <circle cx="32" cy="32" r="24" fill="#3d7bff" opacity=".14"/>
+        <circle cx="32" cy="32" r="19" fill="url(#ng)"/>
+        <g clip-path="url(#nc)"><path d="M10 27q22-5 44 1" stroke="#cfe2ff" stroke-width="1.4" fill="none" opacity=".55"/><path d="M10 38q22 5 44-2" stroke="#0a1c66" stroke-width="3" fill="none" opacity=".45"/><ellipse cx="27" cy="35" rx="5" ry="2.6" fill="#0a1a5e" opacity=".7"/></g>
+        <circle cx="12" cy="12" r=".9" fill="#fff"/><circle cx="52" cy="16" r=".7" fill="#fff"/><circle cx="50" cy="52" r=".9" fill="#c4b5fd"/>
+      </svg>
+      <h1>Planets</h1>
+      <span class="chip" id="status"><i></i><span>yerleşik veri</span></span>
+    </div>
+    <label class="search" id="searchBox">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Ara: Samanyolu, Neptün, Sirius…" autocomplete="off" aria-label="Gezegen, yıldız veya galaksi ara">
+      <button id="qx" hidden>Temizle</button>
+    </label>
+  </header>
+
+  <main>
+    <section id="v-home">
+      <div class="apod" id="apod" hidden></div>
+      <div id="feed"></div>
+    </section>
+
+    <section id="v-explore" hidden>
+      <h2>Güneş Sistemi <small>Güneş'e uzaklık, logaritmik ölçek</small></h2>
+      <div class="panel" id="orbit"></div>
+      <h2>Gezegenler</h2><div class="grid" id="g-planet"></div>
+      <h2>Yıldızlar</h2><div class="grid" id="g-star"></div>
+      <h2>Galaksiler</h2><div class="grid" id="g-galaxy"></div>
+    </section>
+
+    <section id="v-timeline" hidden>
+      <h2>Ne kadar uzağa gittik? <small>logaritmik ölçek</small></h2>
+      <div class="panel"><div class="bars" id="ladder"></div>
+        <p class="note">Her basamak bir öncekinden yüzlerce kat uzak. Voyager 1 değeri 2026 için yaklaşıktır.</p></div>
+      <h2>Uzay Çalışmaları <small>1957'den bugüne</small></h2>
+      <div class="filters" id="filters"></div>
+      <div class="tl" id="tl"></div>
+    </section>
+
+    <section id="v-detail" hidden></section>
+  </main>
+</div>
+
+<nav class="tabs" id="tabs" aria-label="Sekmeler">
+  <button data-tab="home" class="on"><svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg>Ana Sayfa</button>
+  <button data-tab="explore"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><ellipse cx="12" cy="12" rx="10" ry="3.4" transform="rotate(-20 12 12)"/></svg>Keşfet</button>
+  <button data-tab="timeline"><svg viewBox="0 0 24 24"><path d="M12 3c3 2.5 4.5 6 4.5 9.5V16h-9v-3.500C7.500 9 9 5.500 12 3z"/><circle cx="12" cy="10" r="1.6"/><path d="M7.500 14 5 17v3l3-1.500M16.500 14 19 17v3l-3-1.500M10.500 19.500 12 22l1.500-2.500"/></svg>Uzay Çalışmaları</button>
+</nav>
+
+<script>
+"use strict";
+const $=s=>document.querySelector(s);
+const fmt=s=>String(s).replace(/\^(-?\d+)/g,"<sup>$1</sup>");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const norm=s=>s.toLocaleLowerCase("tr").replace(/ı/g,"i").replace(/ş/g,"s").replace(/ğ/g,"g").replace(/ü/g,"u").replace(/ö/g,"o").replace(/ç/g,"c");
+
+/* ---------- veri ---------- */
+const O=[
+ {id:"merkur",k:"planet",n:"Merkür",sub:"Kayaç gezegen",kw:"mercury",wiki:"Mercury_(planet)",v:4879,au:0.39,
+  hook:"Güneş'e en yakın ve en küçük gezegen.",
+  p:"Merkür, Güneş'e en yakın gezegendir ve Güneş Sistemi'nin en küçüğüdür. Neredeyse hiç atmosferi olmadığı için gündüz 430 °C'ye çıkan yüzeyi gece −180 °C'ye kadar soğur. Kraterlerle kaplı yüzeyi Ay'ı andırır; bir yılı yalnızca 88 Dünya günü sürer.",
+  rows:[["Çap","4.879 km (4,9×10^3 km)"],["Kütle","3,30×10^23 kg"],["Güneş'e uzaklık","57,9 milyon km (0,39 AU)"],["Yıl uzunluğu","88 gün"],["Kendi ekseninde dönüş","58,6 Dünya günü"],["Uydu sayısı","0"],["Ortalama sıcaklık","167 °C"],["Tahmini yaş","≈4,5 milyar yıl"]],
+  a:{cols:["120,118,116","150,146,140","104,100,98"],blobs:[["70,68,66",40,.05],["180,176,170",18,.04]],glow:"150,150,160",seed:11}},
+ {id:"venus",k:"planet",n:"Venüs",sub:"Kayaç gezegen",kw:"venus çoban yıldızı",wiki:"Venus",v:12104,au:0.72,
+  hook:"Güneş Sistemi'nin en sıcak gezegeni.",
+  p:"Venüs boyut olarak Dünya'nın ikizi sayılır, ama koşulları bambaşkadır. Karbondioksit dolu kalın atmosferi ısıyı hapseder ve yüzeyi 464 °C'ye çıkarır; bu, kurşunu eritecek kadar sıcaktır. Kendi ekseninde ters yönde ve çok yavaş döner, bu yüzden bir günü bir yılından uzundur.",
+  rows:[["Çap","12.104 km (1,2×10^4 km)"],["Kütle","4,87×10^24 kg"],["Güneş'e uzaklık","108,2 milyon km (0,72 AU)"],["Yıl uzunluğu","224,7 gün"],["Kendi ekseninde dönüş","243 Dünya günü (ters yönde)"],["Uydu sayısı","0"],["Yüzey sıcaklığı","464 °C"],["Tahmini yaş","≈4,5 milyar yıl"]],
+  a:{cols:["232,205,150","214,170,104","240,220,176","200,150,90"],stripes:26,glow:"240,200,130",seed:12}},
+ {id:"dunya",k:"planet",n:"Dünya",sub:"Kayaç gezegen",kw:"earth yerküre mavi gezegen",wiki:"Earth",v:12742,au:1,
+  hook:"Yaşam barındırdığı bilinen tek gezegen.",
+  p:"Dünya, yüzeyinde sıvı su bulunan ve yaşam barındırdığı bilinen tek gezegendir. Yüzeyinin yaklaşık yüzde 71'i okyanuslarla kaplıdır. Manyetik alanı ve atmosferi onu Güneş'in zararlı ışınımından korur; tek doğal uydusu Ay'dır.",
+  rows:[["Çap","12.742 km (1,3×10^4 km)"],["Kütle","5,97×10^24 kg"],["Güneş'e uzaklık","149,6 milyon km (1 AU)"],["Yıl uzunluğu","365,25 gün"],["Kendi ekseninde dönüş","23 sa 56 dk"],["Uydu sayısı","1"],["Ortalama sıcaklık","15 °C"],["Tahmini yaş","≈4,54 milyar yıl"]],
+  a:{cols:["30,84,190","24,70,170","36,96,200"],blobs:[["46,128,74",16,.13],["120,110,70",7,.08],["255,255,255",34,.07]],cap:1,glow:"90,150,255",seed:13}},
+ {id:"mars",k:"planet",n:"Mars",sub:"Kayaç gezegen",kw:"kızıl gezegen",wiki:"Mars",v:6779,au:1.52,
+  hook:"Kızıl Gezegen: rengini demir oksitten alır.",
+  p:"Mars, yüzeyindeki demir oksit yüzünden kızıl görünür. Güneş Sistemi'nin en yüksek dağı Olympus Mons (yaklaşık 22 km) ve en büyük kanyonlarından Valles Marineris buradadır. Geçmişte yüzeyinde sıvı su aktığına dair güçlü kanıtlar vardır ve bugün üzerinde gezgin araçlar çalışmaktadır.",
+  rows:[["Çap","6.779 km (6,8×10^3 km)"],["Kütle","6,42×10^23 kg"],["Güneş'e uzaklık","227,9 milyon km (1,52 AU)"],["Yıl uzunluğu","687 gün"],["Kendi ekseninde dönüş","24 sa 37 dk"],["Uydu sayısı","2 (Phobos, Deimos)"],["Ortalama sıcaklık","−65 °C"],["Tahmini yaş","≈4,5 milyar yıl"]],
+  a:{cols:["196,96,58","176,78,44","208,116,70"],blobs:[["110,48,30",14,.12],["230,160,110",10,.08]],cap:1,glow:"220,110,70",seed:14}},
+ {id:"jupiter",k:"planet",n:"Jüpiter",sub:"Gaz devi",kw:"jupiter büyük kırmızı leke",wiki:"Jupiter",v:139820,au:5.2,
+  hook:"İçine 1.300'den fazla Dünya sığar.",
+  p:"Jüpiter, Güneş Sistemi'nin en büyük gezegenidir; kütlesi diğer bütün gezegenlerin toplamının iki katından fazladır. Büyük Kırmızı Leke adlı fırtınası en az 190 yıldır gözlemlenmektedir. Çoğunlukla hidrojen ve helyumdan oluşur ve 95'ten fazla uydusu vardır.",
+  rows:[["Çap","139.820 km (1,4×10^5 km)"],["Kütle","1,90×10^27 kg"],["Güneş'e uzaklık","778,5 milyon km (5,20 AU)"],["Yıl uzunluğu","11,86 yıl"],["Kendi ekseninde dönüş","9 sa 56 dk"],["Uydu sayısı","95+"],["Bulut üstü sıcaklık","−110 °C"],["Tahmini yaş","≈4,6 milyar yıl"]],
+  a:{cols:["214,190,160","168,120,84","226,206,180","150,104,74","220,196,166","176,132,96"],stripes:34,spot:[.32,.3,.2,.11,"190,84,54"],glow:"230,190,150",seed:15}},
+ {id:"saturn",k:"planet",n:"Satürn",sub:"Gaz devi",kw:"saturn halkalı gezegen",wiki:"Saturn",v:116460,au:9.58,
+  hook:"Halkaları buz ve kaya parçalarından oluşur.",
+  p:"Satürn, göz alıcı halka sistemiyle tanınır. Halkalar toz tanesinden ev büyüklüğüne kadar değişen buz ve kaya parçalarından oluşur; genişlikleri yüz binlerce kilometredir ama kalınlıkları çoğu yerde yalnızca onlarca metredir. Yoğunluğu suyunkinden düşüktür.",
+  rows:[["Çap","116.460 km (1,2×10^5 km)"],["Kütle","5,68×10^26 kg"],["Güneş'e uzaklık","1,43 milyar km (9,58 AU)"],["Yıl uzunluğu","29,45 yıl"],["Kendi ekseninde dönüş","≈10 sa 34 dk"],["Uydu sayısı","270+"],["Bulut üstü sıcaklık","−140 °C"],["Tahmini yaş","≈4,5 milyar yıl"]],
+  a:{cols:["226,204,150","204,176,120","236,220,172","196,168,116"],stripes:22,ring:[[1.35,"170,150,110",.5,10],[1.62,"220,200,160",.75,22],[1.95,"190,172,136",.55,14],[2.18,"150,138,116",.35,5]],tilt:-.38,glow:"230,205,150",seed:16}},
+ {id:"uranus",k:"planet",n:"Uranüs",sub:"Buz devi",kw:"uranus",wiki:"Uranus",v:50724,au:19.2,
+  hook:"Yan yatmış halde dönen buz devi.",
+  p:"Uranüs'ün dönme ekseni yaklaşık 98 derece eğiktir, yani gezegen yörüngesinde yan yatmış halde yuvarlanır. Atmosferindeki metan kırmızı ışığı soğurduğu için soluk mavi-yeşil görünür. Güneş Sistemi'nde ölçülen en soğuk gezegen atmosferi ondadır.",
+  rows:[["Çap","50.724 km (5,1×10^4 km)"],["Kütle","8,68×10^25 kg"],["Güneş'e uzaklık","2,87 milyar km (19,2 AU)"],["Yıl uzunluğu","84 yıl"],["Kendi ekseninde dönüş","17 sa 14 dk (ters yönde)"],["Uydu sayısı","28+"],["Bulut üstü sıcaklık","−195 °C"],["Tahmini yaş","≈4,5 milyar yıl"]],
+  a:{cols:["164,224,230","140,208,220","176,230,234"],ring:[[1.7,"200,220,230",.35,2],[1.85,"200,220,230",.25,1.5]],tilt:1.25,glow:"150,220,230",seed:17}},
+ {id:"neptun",k:"planet",n:"Neptün",sub:"Buz devi",kw:"neptune neptun",wiki:"Neptune",v:49244,au:30.1,
+  hook:"Rüzgârları saatte 2.000 km'yi aşar.",
+  p:"Neptün, Güneş'e en uzak gezegendir ve 1846'da gözlemle değil, matematiksel hesapla bulunmuştur. Güneş Sistemi'nin en hızlı rüzgârları burada eser. Güneş çevresindeki bir turunu 165 yılda tamamlar; keşfinden bu yana yalnızca bir tam tur atmıştır.",
+  rows:[["Çap","49.244 km (4,9×10^4 km)"],["Kütle","1,02×10^26 kg"],["Güneş'e uzaklık","4,50 milyar km (30,1 AU)"],["Yıl uzunluğu","164,8 yıl"],["Kendi ekseninde dönüş","16 sa 6 dk"],["Uydu sayısı","16"],["Bulut üstü sıcaklık","−200 °C"],["Tahmini yaş","≈4,5 milyar yıl"]],
+  a:{cols:["52,96,230","36,72,200","64,112,240","30,60,180"],stripes:14,spot:[-.2,.12,.17,.09,"14,30,110"],streak:1,glow:"70,120,255",seed:18}},
+
+ {id:"gunes",k:"star",n:"Güneş",sub:"Sarı cüce yıldız (G2V)",kw:"sun gunes",wiki:"Sun",v:1,
+  hook:"Güneş Sistemi kütlesinin %99,86'sı.",
+  p:"Güneş, Güneş Sistemi'nin merkezindeki yıldızdır ve sistemin toplam kütlesinin yüzde 99,86'sını oluşturur. Çekirdeğinde her saniye yaklaşık 600 milyon ton hidrojen helyuma dönüşür. Işığı Dünya'ya 8 dakika 20 saniyede ulaşır; ömrünün yaklaşık yarısındadır.",
+  rows:[["Çap","1,39 milyon km (1,4×10^6 km)"],["Kütle","1,99×10^30 kg"],["Tür","G2V, sarı cüce"],["Yüzey sıcaklığı","≈5.500 °C"],["Çekirdek sıcaklığı","≈15 milyon °C"],["Dünya'ya uzaklık","149,6 milyon km"],["Tahmini yaş","≈4,6 milyar yıl"],["Kalan ömür","≈5 milyar yıl"]],
+  a:{col:"255,176,60",core:"255,236,170",sr:.27,grain:1,seed:21}},
+ {id:"sirius",k:"star",n:"Sirius",sub:"Gece göğünün en parlak yıldızı",kw:"akyıldız köpek yıldızı",wiki:"Sirius",v:1.71,
+  hook:"Gece gökyüzünün en parlak yıldızı.",
+  p:"Sirius, Dünya'dan bakıldığında gece göğünün en parlak yıldızıdır ve yalnızca 8,6 ışık yılı uzaktadır. Aslında bir ikili sistemdir: parlak Sirius A'nın yanında, Dünya boyutlarında ama Güneş kütlesinde bir beyaz cüce olan Sirius B döner.",
+  rows:[["Yarıçap","1,71 Güneş yarıçapı (1,2×10^6 km)"],["Kütle","≈2,06 Güneş kütlesi"],["Tür","A1V, beyaz ana kol yıldızı"],["Yüzey sıcaklığı","≈9.900 K"],["Uzaklık","8,6 ışık yılı (8,1×10^13 km)"],["Takımyıldız","Büyük Köpek"],["Tahmini yaş","≈230 milyon yıl"]],
+  a:{col:"150,190,255",core:"235,244,255",sr:.1,spikes:1,seed:22}},
+ {id:"betelgeuse",k:"star",n:"Betelgeuse",sub:"Kırmızı üstdev",kw:"betelgöz orion",wiki:"Betelgeuse",v:750,
+  hook:"Güneş'in yerinde olsa Jüpiter'e kadar uzanırdı.",
+  p:"Betelgeuse, Orion takımyıldızının omzundaki kırmızı üstdevdir. O kadar büyüktür ki Güneş'in yerine konsa yüzeyi Mars'ın yörüngesini aşar, Jüpiter'e yaklaşırdı. Ömrünün sonuna gelmiştir ve astronomik ölçekte yakın bir zamanda süpernova olarak patlaması beklenir.",
+  rows:[["Yarıçap","≈750 Güneş yarıçapı (5×10^8 km)"],["Kütle","≈15–20 Güneş kütlesi"],["Tür","M1–M2, kırmızı üstdev"],["Yüzey sıcaklığı","≈3.500 K"],["Uzaklık","≈550 ışık yılı (5×10^15 km)"],["Takımyıldız","Orion (Avcı)"],["Tahmini yaş","≈8–10 milyon yıl"]],
+  a:{col:"255,96,50",core:"255,196,140",sr:.3,grain:1,seed:23}},
+ {id:"proxima",k:"star",n:"Proxima Centauri",sub:"Güneş'e en yakın yıldız",kw:"proksima erboğa alfa centauri",wiki:"Proxima_Centauri",v:0.15,
+  hook:"Bize en yakın komşu yıldız: 4,24 ışık yılı.",
+  p:"Proxima Centauri, Güneş'ten sonra bize en yakın yıldızdır. Küçük ve sönük bir kırmızı cüce olduğu için çıplak gözle görülemez. Çevresinde, yaşanabilir bölgede dolanan Proxima b dahil gezegenler keşfedilmiştir.",
+  rows:[["Yarıçap","0,15 Güneş yarıçapı (1,1×10^5 km)"],["Kütle","0,12 Güneş kütlesi"],["Tür","M5.5V, kırmızı cüce"],["Yüzey sıcaklığı","≈3.000 K"],["Uzaklık","4,24 ışık yılı (4×10^13 km)"],["Takımyıldız","Erboğa"],["Tahmini yaş","≈4,85 milyar yıl"]],
+  a:{col:"255,90,60",core:"255,190,150",sr:.07,spikes:1,seed:24}},
+ {id:"polaris",k:"star",n:"Kutup Yıldızı",sub:"Polaris, sarı üstdev",kw:"polaris kuzey yıldızı demirkazık",wiki:"Polaris",v:40,
+  hook:"Kuzeyi gösteren yıldız.",
+  p:"Kutup Yıldızı (Polaris), Dünya'nın dönme ekseninin neredeyse tam üzerinde durduğu için gökyüzünde yerinden oynamıyormuş gibi görünür ve yüzyıllardır yön bulmada kullanılır. Parlaklığı düzenli olarak değişen bir Sefe türü değişen yıldızdır.",
+  rows:[["Yarıçap","≈40 Güneş yarıçapı (2,8×10^7 km)"],["Kütle","≈5,4 Güneş kütlesi"],["Tür","F7Ib, sarı üstdev"],["Yüzey sıcaklığı","≈6.000 K"],["Uzaklık","≈430 ışık yılı (4×10^15 km)"],["Takımyıldız","Küçük Ayı"],["Tahmini yaş","≈50–70 milyon yıl"]],
+  a:{col:"255,230,170",core:"255,250,230",sr:.12,spikes:1,seed:25}},
+ {id:"vega",k:"star",n:"Vega",sub:"Beyaz ana kol yıldızı",kw:"lir çalgı",wiki:"Vega",v:2.4,
+  hook:"Fotoğrafı çekilen ilk yıldız (Güneş'ten sonra).",
+  p:"Vega, yaz gökyüzünün en parlak yıldızlarındandır ve Yaz Üçgeni'nin bir köşesidir. 1850'de Güneş dışında fotoğrafı çekilen ilk yıldız olmuştur. Çok hızlı döndüğü için ekvatoru şişkindir; yaklaşık 12.000 yıl sonra yeni kutup yıldızı olacaktır.",
+  rows:[["Yarıçap","≈2,4 Güneş yarıçapı (1,7×10^6 km)"],["Kütle","≈2,1 Güneş kütlesi"],["Tür","A0V, beyaz ana kol yıldızı"],["Yüzey sıcaklığı","≈9.600 K"],["Uzaklık","25 ışık yılı (2,4×10^14 km)"],["Takımyıldız","Lir (Çalgı)"],["Tahmini yaş","≈455 milyon yıl"]],
+  a:{col:"170,200,255",core:"240,246,255",sr:.1,spikes:1,seed:26}},
+ {id:"rigel",k:"star",n:"Rigel",sub:"Mavi üstdev",kw:"orion",wiki:"Rigel",v:79,
+  hook:"Güneş'ten on binlerce kat daha parlak.",
+  p:"Rigel, Orion takımyıldızının en parlak yıldızı ve genç bir mavi üstdevdir. Güneş'ten on binlerce kat fazla ışık yayar. Yakıtını çok hızlı tükettiği için ömrü kısadır ve sonunda süpernova olarak patlayacaktır.",
+  rows:[["Yarıçap","≈79 Güneş yarıçapı (5,5×10^7 km)"],["Kütle","≈21 Güneş kütlesi"],["Tür","B8Ia, mavi üstdev"],["Yüzey sıcaklığı","≈12.100 K"],["Uzaklık","≈860 ışık yılı (8×10^15 km)"],["Takımyıldız","Orion (Avcı)"],["Tahmini yaş","≈8 milyon yıl"]],
+  a:{col:"120,160,255",core:"226,236,255",sr:.14,spikes:1,seed:27}},
+
+ {id:"samanyolu",k:"galaxy",n:"Samanyolu",sub:"Çubuklu sarmal galaksi",kw:"milky way samanyolu galaksisi bizim galaksi",wiki:"Milky_Way",v:100000,
+  hook:"Evimiz: 100–400 milyar yıldızlı bir sarmal.",
+  p:"Samanyolu, Güneş Sistemi'nin içinde bulunduğu galaksidir. Güneş, merkezden yaklaşık 26.000 ışık yılı uzakta, Orion Kolu'nda yer alır ve merkezin çevresindeki bir turunu yaklaşık 230 milyon yılda tamamlar. Merkezinde Sagittarius A* adlı süper kütleli bir kara delik bulunur.",
+  rows:[["Çap","≈100.000 ışık yılı (≈10^18 km)"],["Yıldız sayısı","100–400 milyar (≈10^11)"],["Kütle","≈10^12 Güneş kütlesi"],["Tür","Çubuklu sarmal (SBbc)"],["Merkezdeki kara delik","Sgr A*, ≈4 milyon Güneş kütlesi"],["Güneş'in merkeze uzaklığı","≈26.000 ışık yılı"],["Tahmini yaş","≈13,6 milyar yıl"]],
+  a:{type:"spiral",arms:4,wind:5.2,bar:1,rot:.5,squash:.62,seed:31}},
+ {id:"andromeda",k:"galaxy",n:"Andromeda",sub:"Sarmal galaksi (M31)",kw:"m31 andromeda galaksisi",wiki:"Andromeda_Galaxy",v:152000,
+  hook:"Çıplak gözle görülebilen en uzak cisimlerden.",
+  p:"Andromeda, Samanyolu'na en yakın büyük galaksidir ve karanlık bir gökyüzünde çıplak gözle görülebilir. Saniyede yaklaşık 110 km hızla bize yaklaşmaktadır; iki galaksinin birkaç milyar yıl içinde etkileşime girmesi beklenir.",
+  rows:[["Çap","≈152.000 ışık yılı (1,4×10^18 km)"],["Yıldız sayısı","≈1 trilyon (10^12)"],["Uzaklık","2,5 milyon ışık yılı (2,4×10^19 km)"],["Tür","Sarmal (SA(s)b)"],["Takımyıldız","Andromeda"],["Tahmini yaş","≈10 milyar yıl"]],
+  a:{type:"spiral",arms:2,wind:7.5,rot:-.6,squash:.34,seed:32}},
+ {id:"ucgen",k:"galaxy",n:"Üçgen Galaksisi",sub:"Sarmal galaksi (M33)",kw:"m33 triangulum ucgen",wiki:"Triangulum_Galaxy",v:60000,
+  hook:"Yerel Grup'un üçüncü büyük üyesi.",
+  p:"Üçgen Galaksisi, Samanyolu ve Andromeda'dan sonra Yerel Grup'un üçüncü büyük galaksisidir. Yoğun yıldız oluşum bölgeleriyle doludur; bunların en ünlüsü NGC 604, bilinen en büyük yıldız doğum alanlarından biridir.",
+  rows:[["Çap","≈60.000 ışık yılı (5,7×10^17 km)"],["Yıldız sayısı","≈40 milyar (4×10^10)"],["Uzaklık","2,73 milyon ışık yılı"],["Tür","Sarmal (SA(s)cd)"],["Takımyıldız","Üçgen"],["Tahmini yaş","≈10–13 milyar yıl"]],
+  a:{type:"spiral",arms:3,wind:4.2,rot:.9,squash:.8,loose:1,seed:33}},
+ {id:"bmb",k:"galaxy",n:"Büyük Macellan Bulutu",sub:"Uydu galaksi",kw:"lmc magellan macellan",wiki:"Large_Magellanic_Cloud",v:32000,
+  hook:"Samanyolu'nun güney göğündeki uydu galaksisi.",
+  p:"Büyük Macellan Bulutu, Samanyolu'nun çevresinde dolanan bir uydu galaksidir ve güney yarımküreden çıplak gözle görülür. 1987'de burada patlayan SN 1987A, teleskopun icadından beri gözlenen en yakın süpernovadır.",
+  rows:[["Çap","≈32.000 ışık yılı (3×10^17 km)"],["Yıldız sayısı","≈30 milyar (3×10^10)"],["Uzaklık","≈160.000 ışık yılı"],["Tür","Düzensiz / Macellan tipi sarmal"],["Takımyıldız","Kılıçbalığı, Masa"],["Tahmini yaş","≈13 milyar yıl"]],
+  a:{type:"irregular",rot:.3,squash:.7,seed:34}},
+ {id:"sombrero",k:"galaxy",n:"Sombrero",sub:"Sarmal galaksi (M104)",kw:"m104 sombrero galaksisi şapka",wiki:"Sombrero_Galaxy",v:50000,
+  hook:"Parlak çekirdeği ve koyu toz şeridiyle şapkaya benzer.",
+  p:"Sombrero Galaksisi, neredeyse yandan gördüğümüz için parlak bir çekirdeği kesen koyu toz şeridiyle Meksika şapkasını andırır. Merkezinde yaklaşık bir milyar Güneş kütlesinde süper kütleli bir kara delik ve çevresinde yaklaşık 2.000 küresel yıldız kümesi bulunur.",
+  rows:[["Çap","≈50.000 ışık yılı (4,7×10^17 km)"],["Yıldız sayısı","≈100 milyar (10^11)"],["Uzaklık","≈30 milyon ışık yılı"],["Tür","Sarmal (SA(s)a)"],["Takımyıldız","Başak"],["Tahmini yaş","≈13 milyar yıl"]],
+  a:{type:"sombrero",rot:-.12,squash:.2,seed:35}},
+ {id:"girdap",k:"galaxy",n:"Girdap Galaksisi",sub:"Sarmal galaksi (M51)",kw:"m51 whirlpool girdap",wiki:"Whirlpool_Galaxy",v:76000,
+  hook:"Sarmal yapısı fark edilen ilk galaksi.",
+  p:"Girdap Galaksisi, sarmal kolları ilk kez fark edilen galaksidir (1845). Bize neredeyse tam yüzünü döndüğü için kolları çok net görünür. Yanındaki küçük NGC 5195 galaksisiyle çekimsel etkileşim halindedir ve bu etkileşim kollarını belirginleştirir.",
+  rows:[["Çap","≈76.000 ışık yılı (7,2×10^17 km)"],["Yıldız sayısı","≈100 milyar (10^11)"],["Uzaklık","≈23–31 milyon ışık yılı"],["Tür","Sarmal (SA(s)bc)"],["Takımyıldız","Av Köpekleri"],["Tahmini yaş","≈10–13 milyar yıl"]],
+  a:{type:"spiral",arms:2,wind:8.5,rot:.2,squash:.92,seed:36}},
+ {id:"m87",k:"galaxy",n:"Messier 87",sub:"Dev eliptik galaksi",kw:"m87 virgo a kara delik",wiki:"Messier_87",v:120000,
+  hook:"Fotoğrafı çekilen ilk kara deliğin evi.",
+  p:"Messier 87, Başak Kümesi'ndeki dev bir eliptik galaksidir. 2019'da Olay Ufku Teleskobu, merkezindeki 6,5 milyar Güneş kütleli kara deliğin gölgesini görüntüledi; bu, bir kara deliğin ilk doğrudan görüntüsüdür. Merkezinden binlerce ışık yılı uzunluğunda bir plazma jeti fışkırır.",
+  rows:[["Çap","≈120.000 ışık yılı (1,1×10^18 km)"],["Yıldız sayısı","≈1 trilyon+ (10^12)"],["Uzaklık","53,5 milyon ışık yılı"],["Tür","Dev eliptik (E0-1)"],["Merkezdeki kara delik","M87*, 6,5 milyar Güneş kütlesi"],["Takımyıldız","Başak"],["Tahmini yaş","≈13 milyar yıl"]],
+  a:{type:"elliptical",rot:0,squash:.9,jet:1,seed:37}}
+];
+const BY=Object.fromEntries(O.map(o=>[o.id,o]));
+const FEED=["neptun","samanyolu","jupiter","betelgeuse","saturn","andromeda","dunya","m87","mars","sirius","gunes","girdap"];
+const KIND={planet:"Gezegen",star:"Yıldız",galaxy:"Galaksi"};
+
+const CAT={insan:["İnsanlı uçuş","#c4b5fd"],ay:["Ay","#f4f6fb"],gezegen:["Gezegen keşfi","#7fb0ff"],yorunge:["Uydu ve teleskop","#3d7bff"]};
+const EV=[
+ [1957,"4 Ekim 1957","Sputnik 1: ilk yapay uydu","Sovyetler Birliği, 58 cm çapındaki Sputnik 1'i yörüngeye yerleştirdi. Uzay Çağı bu fırlatmayla başladı.","yorunge"],
+ [1957,"3 Kasım 1957","Laika yörüngede","Sputnik 2 ile Laika adlı köpek, Dünya yörüngesine çıkan ilk canlı oldu.","yorunge"],
+ [1961,"12 Nisan 1961","Yuri Gagarin: uzaydaki ilk insan","Gagarin, Vostok 1 ile Dünya çevresinde 108 dakikalık bir tur attı.","insan"],
+ [1963,"16 Haziran 1963","Valentina Tereşkova: uzaydaki ilk kadın","Vostok 6 ile yaklaşık üç gün yörüngede kaldı ve Dünya'nın çevresinde 48 tur attı.","insan"],
+ [1965,"18 Mart 1965","İlk uzay yürüyüşü","Aleksey Leonov, Voshod 2'den çıkarak 12 dakika boyunca uzay boşluğunda kaldı.","insan"],
+ [1966,"3 Şubat 1966","Luna 9: Ay'a ilk yumuşak iniş","İnsansız Luna 9, Ay yüzeyine hasarsız indi ve yüzeyden ilk fotoğrafları gönderdi.","ay"],
+ [1969,"20 Temmuz 1969","Apollo 11: Ay'a ilk insanlı iniş","Neil Armstrong ve Buzz Aldrin Ay'a ayak bastı; Michael Collins yörüngede bekledi. 1972'ye kadar toplam 12 kişi Ay'da yürüdü.","ay","moon"],
+ [1971,"19 Nisan 1971","Salyut 1: ilk uzay istasyonu","Sovyetler Birliği, insanların içinde yaşayıp çalışabildiği ilk yörünge istasyonunu fırlattı.","yorunge"],
+ [1976,"20 Temmuz 1976","Viking 1 Mars'ta","NASA'nın Viking 1 aracı Mars'a indi ve yüzeyde uzun süre çalışan ilk araç oldu.","gezegen"],
+ [1977,"Ağustos–Eylül 1977","Voyager 1 ve 2 yola çıktı","İkiz araçlar dış gezegenleri ziyaret etti. Voyager 2, Uranüs ve Neptün'e giden tek araçtır.","gezegen"],
+ [1981,"12 Nisan 1981","İlk Uzay Mekiği uçuşu","Columbia, yeniden kullanılabilen ilk insanlı uzay aracı olarak fırlatıldı.","insan"],
+ [1986,"20 Şubat 1986","Mir istasyonu","İlk modüler uzay istasyonu Mir'in çekirdek modülü fırlatıldı; istasyon 15 yıl yörüngede kaldı.","yorunge"],
+ [1990,"24 Nisan 1990","Hubble Uzay Teleskobu","Hubble, atmosferin üzerinden evrene bakarak evrenin yaşı ve genişlemesi hakkındaki bilgimizi değiştirdi.","yorunge"],
+ [1998,"20 Kasım 1998","Uluslararası Uzay İstasyonu","UUİ'nin ilk modülü Zarya fırlatıldı. İstasyonda Kasım 2000'den beri kesintisiz insan yaşıyor.","yorunge"],
+ [2004,"Ocak 2004","Spirit ve Opportunity Mars'ta","İkiz gezginler Mars'ta geçmişte sıvı su bulunduğuna dair kanıt buldu. Opportunity 14 yıldan uzun çalıştı.","gezegen"],
+ [2012,"Ağustos 2012","Curiosity indi, Voyager 1 yıldızlararası uzayda","Curiosity gezgini 6 Ağustos'ta Mars'a indi. Aynı ay Voyager 1, Güneş'in etki alanından çıkan ilk insan yapımı araç oldu.","gezegen"],
+ [2015,"14 Temmuz 2015","New Horizons Plüton'da","Araç, Plüton'un yakınından geçerek yüzeyinin ilk ayrıntılı görüntülerini gönderdi.","gezegen"],
+ [2015,"21 Aralık 2015","Yörünge roketi ilk kez geri indi","SpaceX'in Falcon 9 roketinin ilk kademesi, yükünü yörüngeye bıraktıktan sonra dikey olarak geri indi.","yorunge"],
+ [2019,"10 Nisan 2019","İlk kara delik görüntüsü","Olay Ufku Teleskobu, M87 galaksisinin merkezindeki kara deliğin gölgesini görüntüledi.","yorunge"],
+ [2020,"30 Mayıs 2020","İlk ticari insanlı uçuş","SpaceX Crew Dragon, iki NASA astronotunu Uluslararası Uzay İstasyonu'na taşıdı.","insan"],
+ [2021,"19 Nisan 2021","Başka bir gezegende ilk uçuş","Perseverance ile Mars'a giden Ingenuity helikopteri, Mars'ın ince atmosferinde havalandı.","gezegen"],
+ [2021,"25 Aralık 2021","James Webb Uzay Teleskobu","6,5 metrelik aynasıyla Webb fırlatıldı. İlk bilimsel görüntüleri Temmuz 2022'de yayımlandı.","yorunge"],
+ [2022,"26 Eylül 2022","DART: bir asteroidin yörüngesi değiştirildi","NASA'nın DART aracı Dimorphos'a çarparak yörünge süresini yaklaşık 32 dakika kısalttı.","gezegen"],
+ [2022,"16 Kasım 2022","Artemis I","Yeni Ay programının insansız ilk uçuşunda Orion kapsülü Ay'ın çevresinden dolanıp Dünya'ya döndü.","ay"],
+ [2023,"23 Ağustos 2023","Chandrayaan-3 Ay'ın güney kutbunda","Hindistan, Ay'ın güney kutbu yakınına yumuşak iniş yapan ilk ülke oldu.","ay"],
+ [2024,"18 Ocak 2024","Alper Gezeravcı: ilk Türk astronot","Gezeravcı, Axiom Mission 3 ile Uluslararası Uzay İstasyonu'na gitti ve orada bilimsel deneyler yürüttü.","insan"],
+ [2024,"25 Haziran 2024","Ay'ın uzak yüzünden ilk örnek","Çin'in Chang'e 6 aracı, Ay'ın uzak yüzünden topladığı örnekleri Dünya'ya getirdi.","ay"],
+ [2026,"Nisan 2026","Artemis II","Dört astronot Ay'ın çevresinden dolanıp Dünya'ya döndü. 1972'deki Apollo 17'den sonra Ay'a giden ilk insanlı uçuş.","ay"]
+];
+
+/* ---------- çizim (yerleşik görseller) ---------- */
+function rng(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function art(o,S){
+  S=S||600;const c=document.createElement("canvas");c.width=c.height=S;const x=c.getContext("2d"),R=rng(o.a.seed*977),a=o.a;
+  x.fillStyle="#000";x.fillRect(0,0,S,S);
+  [["61,123,255",.13],["139,92,246",.11]].forEach(([col,al])=>{const gx=R()*S,gy=R()*S,g=x.createRadialGradient(gx,gy,0,gx,gy,S*.6);g.addColorStop(0,`rgba(${col},${al})`);g.addColorStop(1,"rgba(0,0,0,0)");x.fillStyle=g;x.fillRect(0,0,S,S)});
+  for(let i=0;i<240;i++){x.fillStyle=`rgba(${R()<.2?"196,181,253":"255,255,255"},${.15+R()*.7})`;const r=R()*1.3+.3;x.beginPath();x.arc(R()*S,R()*S,r*S/600,0,7);x.fill()}
+  const cx=S/2,cy=S/2;
+  if(o.k==="planet"){
+    const r=S*(a.ring?.2:.31);
+    let g=x.createRadialGradient(cx,cy,r*.9,cx,cy,r*1.5);g.addColorStop(0,`rgba(${a.glow},.38)`);g.addColorStop(1,"rgba(0,0,0,0)");x.fillStyle=g;x.fillRect(0,0,S,S);
+    x.save();x.translate(cx,cy);x.rotate(a.tilt||0);
+    const ring=()=>{(a.ring||[]).forEach(([k,col,al,w])=>{x.beginPath();x.ellipse(0,0,r*k,r*k*.3,0,0,7);x.strokeStyle=`rgba(${col},${al})`;x.lineWidth=w*S/600;x.stroke()})};
+    ring();
+    x.save();x.beginPath();x.arc(0,0,r,0,7);x.clip();
+    g=x.createLinearGradient(0,-r,0,r);a.cols.forEach((col,i)=>g.addColorStop(i/(a.cols.length-1||1),`rgb(${col})`));x.fillStyle=g;x.fillRect(-r,-r,2*r,2*r);
+    for(let i=0;i<(a.stripes||0);i++){x.fillStyle=`rgba(${a.cols[Math.floor(R()*a.cols.length)]},.4)`;x.fillRect(-r,-r+R()*2*r,2*r,r*(.015+R()*.06))}
+    (a.blobs||[]).forEach(([col,n,al])=>{for(let i=0;i<n;i++){const bx=(R()*2-1)*r,by=(R()*2-1)*r,br=r*(.06+R()*.3);const b=x.createRadialGradient(bx,by,0,bx,by,br);b.addColorStop(0,`rgba(${col},${al*6})`);b.addColorStop(1,`rgba(${col},0)`);x.fillStyle=b;x.fillRect(bx-br,by-br,2*br,2*br)}});
+    if(a.cap){x.fillStyle="rgba(255,255,255,.8)";x.beginPath();x.ellipse(0,-r,r*.5,r*.13,0,0,7);x.fill();x.beginPath();x.ellipse(0,r,r*.42,r*.1,0,0,7);x.fill()}
+    if(a.spot){const[sx,sy,rx,ry,col]=a.spot;x.fillStyle=`rgba(${col},.85)`;x.beginPath();x.ellipse(sx*r,sy*r,rx*r,ry*r,0,0,7);x.fill()}
+    if(a.streak){x.strokeStyle="rgba(255,255,255,.55)";x.lineWidth=r*.022;x.lineCap="round";[[-.5,-.28,.3],[.1,.36,.26],[-.1,.02,.16]].forEach(([sx,sy,l])=>{x.beginPath();x.moveTo(sx*r,sy*r);x.quadraticCurveTo((sx+l/2)*r,(sy-.03)*r,(sx+l)*r,sy*r);x.stroke()})}
+    x.rotate(-(a.tilt||0));
+    g=x.createRadialGradient(-r*.45,-r*.45,0,-r*.45,-r*.45,r*1.95);g.addColorStop(0,"rgba(255,255,255,.14)");g.addColorStop(.42,"rgba(0,0,0,0)");g.addColorStop(1,"rgba(0,0,0,.93)");x.fillStyle=g;x.fillRect(-r,-r,2*r,2*r);
+    x.restore();
+    if(a.ring){x.save();x.beginPath();x.rect(-S,0,2*S,S);x.clip();ring();x.restore()}
+    x.restore();
+  }else if(o.k==="star"){
+    const r=S*a.sr;
+    let g=x.createRadialGradient(cx,cy,0,cx,cy,S*.5);g.addColorStop(0,`rgba(${a.col},.75)`);g.addColorStop(Math.min(.9,r/(S*.5)+.12),`rgba(${a.col},.22)`);g.addColorStop(1,"rgba(0,0,0,0)");x.fillStyle=g;x.fillRect(0,0,S,S);
+    if(a.spikes){x.save();x.translate(cx,cy);x.globalCompositeOperation="lighter";for(let i=0;i<4;i++){x.rotate(Math.PI/2);const L=S*.44,sg=x.createLinearGradient(0,0,L,0);sg.addColorStop(0,`rgba(${a.core},.9)`);sg.addColorStop(1,`rgba(${a.col},0)`);x.fillStyle=sg;x.beginPath();x.moveTo(0,-r*.16);x.lineTo(L,0);x.lineTo(0,r*.16);x.fill()}x.restore()}
+    g=x.createRadialGradient(cx,cy,0,cx,cy,r);g.addColorStop(0,"#fff");g.addColorStop(.55,`rgb(${a.core})`);g.addColorStop(1,`rgb(${a.col})`);x.fillStyle=g;x.beginPath();x.arc(cx,cy,r,0,7);x.fill();
+    if(a.grain){x.save();x.beginPath();x.arc(cx,cy,r,0,7);x.clip();for(let i=0;i<260;i++){const bx=cx+(R()*2-1)*r,by=cy+(R()*2-1)*r,br=r*(.03+R()*.1);x.fillStyle=R()<.5?`rgba(${a.core},.16)`:"rgba(120,30,0,.13)";x.beginPath();x.arc(bx,by,br,0,7);x.fill()}
+      g=x.createRadialGradient(cx,cy,r*.5,cx,cy,r);g.addColorStop(0,"rgba(0,0,0,0)");g.addColorStop(1,"rgba(120,20,0,.4)");x.fillStyle=g;x.fillRect(cx-r,cy-r,2*r,2*r);x.restore()}
+  }else{
+    const gs=()=>(R()+R()+R()-1.5)/1.5, u=S/600;
+    x.save();x.translate(cx,cy);x.rotate(a.rot||0);x.scale(1,a.squash||1);x.globalCompositeOperation="lighter";
+    const dot=(px,py,col,al,sz)=>{x.fillStyle=`rgba(${col},${al})`;x.fillRect(px,py,sz*u,sz*u)};
+    const glow=(rad,col,al)=>{const g=x.createRadialGradient(0,0,0,0,0,rad);g.addColorStop(0,`rgba(${col},${al})`);g.addColorStop(1,`rgba(${col},0)`);x.fillStyle=g;x.beginPath();x.arc(0,0,rad,0,7);x.fill()};
+    if(a.type==="spiral"){
+      glow(S*.42,"90,110,220",.16);
+      for(let i=0;i<9000;i++){const arm=Math.floor(R()*a.arms),t=Math.pow(R(),.75),rr=t*S*.4,sp=(a.loose?.5:.3)*(0.4+t);
+        const ang=arm*2*Math.PI/a.arms+t*a.wind+gs()*sp,px=Math.cos(ang)*rr+gs()*6*u,py=Math.sin(ang)*rr+gs()*6*u;
+        const col=t<.25?"255,226,186":R()<.3?"196,160,255":R()<.12?"255,150,190":"140,176,255";dot(px,py,col,.2+R()*.5,.7+R()*1.5)}
+      if(a.bar){x.save();x.scale(2.3,.75);glow(S*.07,"255,226,180",.8);x.restore()}
+      glow(S*.1,"255,236,200",.95);glow(S*.03,"255,255,255",1);
+    }else if(a.type==="elliptical"){
+      glow(S*.42,"255,214,160",.28);glow(S*.2,"255,226,186",.6);
+      for(let i=0;i<4500;i++){const rr=Math.abs(gs())*S*.36,an=R()*7;dot(Math.cos(an)*rr,Math.sin(an)*rr,"255,224,186",.15+R()*.4,.7+R()*1.2)}
+      glow(S*.05,"255,255,255",1);
+      if(a.jet){x.save();x.rotate(-.5);const g=x.createLinearGradient(0,0,S*.3,0);g.addColorStop(0,"rgba(150,190,255,.95)");g.addColorStop(1,"rgba(150,190,255,0)");x.fillStyle=g;x.fillRect(0,-2.5*u,S*.3,5*u);x.restore()}
+    }else if(a.type==="irregular"){
+      glow(S*.34,"110,130,230",.18);
+      x.save();x.scale(2.6,.6);glow(S*.07,"255,224,190",.7);x.restore();
+      for(let k=0;k<9;k++){const kx=gs()*S*.22,ky=gs()*S*.2,kr=S*(.05+R()*.1),col=R()<.35?"255,150,190":R()<.5?"196,160,255":"150,184,255";
+        for(let i=0;i<700;i++)dot(kx+gs()*kr,ky+gs()*kr,col,.15+R()*.45,.7+R()*1.4)}
+      for(let i=0;i<2500;i++)dot(gs()*S*.28,gs()*S*.24,"230,224,255",.1+R()*.3,.7+R())
+    }else{ /* sombrero */
+      x.save();x.scale(1,2.6);glow(S*.22,"255,230,190",.6);x.restore();
+      for(let i=0;i<7000;i++){const rr=(.25+Math.abs(gs())*.75)*S*.4,an=R()*7;dot(Math.cos(an)*rr,Math.sin(an)*rr,R()<.3?"170,190,255":"255,226,190",.12+R()*.4,.7+R()*1.3)}
+      x.save();x.scale(1,2.4);glow(S*.08,"255,255,240",1);x.restore();
+      x.globalCompositeOperation="source-over";x.beginPath();x.ellipse(0,0,S*.36,S*.36,0,.05,Math.PI-.05);x.strokeStyle="rgba(8,5,2,.88)";x.lineWidth=S*.075;x.stroke();
+    }
+    x.restore();
+  }
+  return c.toDataURL("image/jpeg",.86);
+}
+O.forEach(o=>{o.img=art(o)});
+
+/* ---------- durum ---------- */
+const store={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const liked=new Set(store.get("pl-like",[])), saved=new Set(store.get("pl-save",[]));
+let tab=store.get("pl-tab","home"), lastScroll=0, filter="all";
+
+/* ---------- ana sayfa ---------- */
+const ICON={like:'<svg viewBox="0 0 24 24"><path d="M12 20.500s-7.500-4.600-7.500-10A4.300 4.300 0 0 1 12 8a4.300 4.300 0 0 1 7.500 2.500c0 5.400-7.500 10-7.500 10z"/></svg>',save:'<svg viewBox="0 0 24 24"><path d="M6 4h12v16.500l-6-4.500-6 4.500z"/></svg>'};
+function postHTML(o){
+  const s=o.rows.slice(0,3).map(r=>`<span>${esc(r[0])}: ${fmt(r[1].replace(/\s*\(.*\)/,""))}</span>`).join("");
+  return `<article class="post">
+    <div class="post-head"><img class="ava" src="${o.img}" data-art="${o.id}" alt=""><div><b>${esc(o.n)}</b><span>${KIND[o.k]} · ${esc(o.sub)}</span></div></div>
+    <button class="shot" data-open="${o.id}" aria-label="${esc(o.n)} ayrıntıları"><img src="${o.img}" data-art="${o.id}" alt="${esc(o.n)}"></button>
+    <div class="acts"><button class="like ${liked.has(o.id)?"on":""}" data-like="${o.id}" aria-pressed="${liked.has(o.id)}">${ICON.like}<span>${liked.has(o.id)?"Beğenildi":"Beğen"}</span></button><span class="sp"></span><button class="save ${saved.has(o.id)?"on":""}" data-save="${o.id}" aria-pressed="${saved.has(o.id)}" aria-label="Kaydet">${ICON.save}</button></div>
+    <p class="cap"><b>${esc(o.n)}</b> ${esc(o.hook)} ${esc(o.p.split(". ")[0])}.</p>
+    <div class="stats">${s}</div>
+    <button class="more" data-open="${o.id}">Tüm bilgileri gör</button>
+  </article>`;
+}
+function renderFeed(){
+  const q=norm($("#q").value.trim());$("#qx").hidden=!q;
+  let list;
+  if(q){list=O.filter(o=>norm(o.n+" "+o.kw+" "+o.sub+" "+KIND[o.k]).includes(q))}
+  else list=FEED.map(id=>BY[id]);
+  $("#feed").innerHTML=list.length?list.map(postHTML).join(""):`<p class="empty">“${esc($("#q").value)}” için sonuç yok.<br>Örneğin “Samanyolu”, “galaksi” veya “Mars” yazmayı dene.</p>`;
+  $("#apod").hidden=!!q||!$("#apod").innerHTML;
+}
+
+/* ---------- keşfet ---------- */
+function renderExplore(){
+  ["planet","star","galaxy"].forEach(k=>{$("#g-"+k).innerHTML=O.filter(o=>o.k===k).map(o=>`<button class="tile" data-open="${o.id}"><img src="${o.img}" data-art="${o.id}" alt=""><div><b>${esc(o.n)}</b><span>${esc(o.sub)}</span></div></button>`).join("")});
+  const P=O.filter(o=>o.k==="planet"),X=au=>32+(Math.log10(au)-Math.log10(.3))/(Math.log10(35)-Math.log10(.3))*292;
+  const colr={merkur:"#9a9794",venus:"#e0b878",dunya:"#3d7bff",mars:"#c8623c",jupiter:"#d2b08a",saturn:"#e0c88c",uranus:"#a4e0e6",neptun:"#4a78f0"};
+  let s=`<svg viewBox="0 0 340 118" role="img" aria-label="Gezegenlerin Güneş'e uzaklığı"><line x1="14" y1="58" x2="332" y2="58" stroke="#1d2233" stroke-width="1"/><circle cx="12" cy="58" r="9" fill="#ffb03c"/><circle cx="12" cy="58" r="14" fill="#ffb03c" opacity=".18"/>`;
+  [1,10].forEach(t=>{s+=`<line x1="${X(t)}" y1="96" x2="${X(t)}" y2="102" stroke="#5b6276"/><text x="${X(t)}" y="113" fill="#5b6276" font-size="8.500" text-anchor="middle">${t} AU</text>`});
+  P.forEach((o,i)=>{const r=2.5+Math.sqrt(o.v/139820)*8.5,up=i%2===0,x=X(o.au);
+    s+=`<g data-open="${o.id}" style="cursor:pointer"><circle cx="${x}" cy="58" r="${Math.max(r,9)}" fill="#000" opacity="0"/><circle cx="${x}" cy="58" r="${r}" fill="${colr[o.id]}"/><text x="${x}" y="${up?58-r-6:58+r+13}" fill="#f4f6fb" font-size="9" font-weight="600" text-anchor="middle">${o.n}</text></g>`});
+  $("#orbit").innerHTML=s+`</svg><p class="note">Noktaların boyutu gezegen çaplarıyla orantılıdır (karekök ölçeği). 1 AU = Dünya–Güneş uzaklığı, 149,6 milyon km.</p>`;
+}
+
+/* ---------- çubuk grafik ---------- */
+function bars(items,me){
+  const vs=items.map(i=>i[1]),lo=Math.log10(Math.min(...vs)/3),hi=Math.log10(Math.max(...vs));
+  return items.map(([n,v,lab,id])=>`<div class="bar ${id===me?"me":""}"><span>${esc(n)}</span><i style="width:${Math.max(3,(Math.log10(v)-lo)/(hi-lo)*100).toFixed(1)}%"></i><span>${fmt(lab)}</span></div>`).join("");
+}
+const num=n=>n.toLocaleString("tr-TR");
+
+/* ---------- ayrıntı ---------- */
+function openDetail(id){
+  const o=BY[id];if(!o)return;lastScroll=window.scrollY;
+  const group=O.filter(g=>g.k===o.k).slice().sort((a,b)=>b.v-a.v);
+  const unit=o.k==="planet"?[" km","Çap karşılaştırması"]:o.k==="star"?[" R☉","Yarıçap karşılaştırması (Güneş = 1)"]:[" ıy","Çap karşılaştırması (ışık yılı)"];
+  $("#v-detail").innerHTML=`<button class="back" id="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.200" stroke-linecap="round" stroke-linejoin="round"><path d="m14 6-6 6 6 6"/></svg>Geri</button>
+    <div class="shot"><img src="${o.img}" data-art="${o.id}" alt="${esc(o.n)}"></div>
+    <h2 class="d-title" style="text-transform:none;letter-spacing:0">${esc(o.n)}</h2><div class="d-sub">${KIND[o.k]} · ${esc(o.sub)}</div>
+    <p class="d-p">${esc(o.p)}</p>
+    <h2>Temel bilgiler</h2>
+    <div class="panel"><table>${o.rows.map(r=>`<tr><td>${esc(r[0])}</td><td>${fmt(esc(r[1]))}</td></tr>`).join("")}</table></div>
+    <h2>${unit[1]} <small>logaritmik ölçek</small></h2>
+    <div class="panel"><div class="bars">${bars(group.map(g=>[g.n,g.v,num(g.v)+unit[0],g.id]),o.id)}</div></div>
+    <p class="src" id="credit">Değerler NASA gezegen bilgi sayfaları ve astronomi kataloglarındaki yaklaşık değerlerdir; yıldız ve galaksi ölçümleri tahminidir.</p>`;
+  show("detail");window.scrollTo(0,0);applyLive();
+  if(INAPP){try{history.pushState({d:1},"")}catch(e){}}
+}
+
+/* ---------- kronoloji ---------- */
+function moonFig(){
+  const d=9.6,x0=12;let s=`<svg viewBox="0 0 320 44" role="img" aria-label="Dünya ile Ay arası ölçekli uzaklık">`;
+  for(let i=1;i<30;i++)s+=`<circle cx="${x0+d/2+i*d}" cy="20" r="${d/2-.8}" fill="none" stroke="#1d2233"/>`;
+  s+=`<circle cx="${x0+d/2}" cy="20" r="${d/2}" fill="#3d7bff"/><circle cx="${x0+d/2+30.2*d}" cy="20" r="${d*.136}" fill="#f4f6fb"/>
+  <text x="${x0}" y="40" fill="#8c94a8" font-size="9">Dünya</text><text x="${x0+30.2*d+8}" y="40" fill="#8c94a8" font-size="9" text-anchor="end">Ay</text></svg>`;
+  return `<figure>${s}<figcaption>Gerçek ölçek: Dünya ile Ay arasına yaklaşık 30 Dünya sığar (384.400 km). Apollo 11 bu yolu 3 günde aştı.</figcaption></figure>`;
+}
+function renderTimeline(){
+  $("#ladder").innerHTML=bars([["UUİ yörüngesi",400,"400 km"],["Ay",384400,"384.400 km"],["Mars",2.25e8,"≈225 mn km"],["Plüton",4.8e9,"≈4,8 mr km"],["Voyager 1",2.5e10,"≈25 mr km"]],null).replace(/class="bar "/g,'class="bar me"');
+  $("#filters").innerHTML=[["all","Tümü"],...Object.entries(CAT).map(([k,v])=>[k,v[0]])].map(([k,l])=>`<button data-f="${k}" class="${filter===k?"on":""}">${l}</button>`).join("");
+  let dec=0,h="";
+  EV.filter(e=>filter==="all"||e[4]===filter).forEach(e=>{const d=Math.floor(e[0]/10)*10;if(d!==dec){dec=d;h+=`<div class="decade">${d}'ler</div>`}
+    h+=`<article class="ev" style="--c:${CAT[e[4]][1]}"><time>${e[1]}</time><h3>${esc(e[2])}</h3><p>${esc(e[3])}</p><span class="tag">${CAT[e[4]][0]}</span>${e[5]==="moon"?moonFig():""}</article>`});
+  $("#tl").innerHTML=h;
+}
+
+/* ---------- gezinme ---------- */
+const INAPP=location.protocol==="file:";
+function closeDetail(){if(!$("#v-detail").hidden){show(tab);window.scrollTo(0,lastScroll)}}
+window.addEventListener("popstate",closeDetail);
+function show(v){
+  ["home","explore","timeline","detail"].forEach(n=>{$("#v-"+n).hidden=n!==v});
+  $("#searchBox").hidden=v!=="home";
+  if(v!=="detail"){tab=v;store.set("pl-tab",v)}
+  document.querySelectorAll("#tabs button").forEach(b=>{const on=b.dataset.tab===tab;b.classList.toggle("on",on);b.setAttribute("aria-current",on?"page":"false")});
+}
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-open],[data-like],[data-save],[data-tab],[data-f],#back,#qx");if(!t)return;
+  if(t.id==="back"){if(INAPP&&history.state&&history.state.d){history.back();return}closeDetail();return}
+  if(t.id==="qx"){$("#q").value="";renderFeed();applyLive();$("#q").focus();return}
+  if(t.dataset.open)return openDetail(t.dataset.open);
+  if(t.dataset.tab){show(t.dataset.tab);window.scrollTo(0,0);return}
+  if(t.dataset.f){filter=t.dataset.f;renderTimeline();return}
+  const isLike=!!t.dataset.like,set=isLike?liked:saved,id=t.dataset.like||t.dataset.save;
+  set.has(id)?set.delete(id):set.add(id);store.set(isLike?"pl-like":"pl-save",[...set]);
+  t.classList.toggle("on",set.has(id));t.setAttribute("aria-pressed",set.has(id));
+  if(isLike)t.querySelector("span").textContent=set.has(id)?"Beğenildi":"Beğen";
+});
+$("#q").addEventListener("input",()=>{renderFeed();applyLive()});
+
+/* ---------- canlı veri: Wikipedia görselleri + NASA günün görseli ---------- */
+const live={};
+function applyLive(){document.querySelectorAll("img[data-art]").forEach(im=>{const u=live[im.dataset.art];if(u&&im.dataset.done!==u&&!im.classList.contains("ava")){im.dataset.done=u;const t=new Image();t.onload=()=>{im.src=u};t.src=u}})}
+async function wiki(o){
+  const r=await fetch("https://en.wikipedia.org/api/rest_v1/page/summary/"+o.wiki);if(!r.ok)throw 0;
+  const j=await r.json(),u=j.thumbnail&&j.thumbnail.source;if(u){live[o.id]=u.replace(/\/\d+px-/,"/640px-");applyLive()}
+}
+async function goLive(){
+  try{await wiki(BY.neptun)}catch(e){return}
+  const st=$("#status");st.classList.add("live");st.querySelector("span").textContent="canlı görseller";
+  O.filter(o=>o.id!=="neptun").forEach(o=>wiki(o).catch(()=>{}));
+  try{
+    const r=await fetch("https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY");if(!r.ok)return;const j=await r.json();
+    if(j.media_type==="image"&&j.url){$("#apod").innerHTML=`<img src="${esc(j.url)}" alt=""><div><small>NASA · Günün Uzay Görseli</small><b>${esc(j.title||"")}</b></div>`;renderFeed();applyLive()}
+  }catch(e){}
+}
+
+renderFeed();renderExplore();renderTimeline();show(tab==="detail"?"home":tab);goLive();
+</script>
+</body></html>
